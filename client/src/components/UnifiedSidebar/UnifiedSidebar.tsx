@@ -1,5 +1,7 @@
 import { useCallback, useState, useEffect, useRef, memo, startTransition } from 'react';
+import { useAtomValue } from 'jotai';
 import { useForm } from 'react-hook-form';
+import { pxToRem } from '@librechat/client';
 import type { ReactNode } from 'react';
 import type { ChatFormValues } from '~/common';
 import {
@@ -16,6 +18,7 @@ import { MobileHeader, MobileBottomBar, MobileShortcutTargets } from './mobile';
 import useUnifiedSidebarLinks from '~/hooks/Nav/useUnifiedSidebarLinks';
 import useSidebarState from '~/hooks/Nav/useSidebarState';
 import { useChatHelpers, useLocalize } from '~/hooks';
+import { uiScaleValueAtom } from '~/store/uiScale';
 import SidePanelNav from '~/components/SidePanel/Nav';
 import Sidebar from './Sidebar';
 import { cn } from '~/utils';
@@ -45,6 +48,7 @@ function UnifiedSidebar() {
   const localize = useLocalize();
   const { isSmallScreen, expanded, setExpanded } = useSidebarState();
   const [sidebarWidth, setSidebarWidth] = useState(getInitialWidth);
+  const uiScale = useAtomValue(uiScaleValueAtom);
   const [isResizing, setIsResizing] = useState(false);
   const resizeHandlers = useRef<{ move: (e: MouseEvent) => void; up: () => void } | null>(null);
 
@@ -65,7 +69,7 @@ function UnifiedSidebar() {
   const handleResizeStart = useCallback(() => {
     setIsResizing(true);
     document.body.style.userSelect = 'none';
-    const maxWidth = window.innerWidth * 0.4;
+    const maxWidth = (window.innerWidth * 0.4) / uiScale;
     let rafId: number | null = null;
 
     const move = (e: MouseEvent) => {
@@ -74,7 +78,7 @@ function UnifiedSidebar() {
       }
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const next = Math.max(EXPANDED_MIN, Math.min(e.clientX, maxWidth));
+        const next = Math.max(EXPANDED_MIN, Math.min(e.clientX / uiScale, maxWidth));
         setSidebarWidth(next);
       });
     };
@@ -98,18 +102,21 @@ function UnifiedSidebar() {
     resizeHandlers.current = { move, up };
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', up);
-  }, []);
+  }, [uiScale]);
 
-  const handleResizeKeyboard = useCallback((direction: 'shrink' | 'grow') => {
-    setSidebarWidth((w) => {
-      const next =
-        direction === 'shrink'
-          ? Math.max(w - 20, EXPANDED_MIN)
-          : Math.min(w + 20, window.innerWidth * 0.4);
-      localStorage.setItem('side:width', String(Math.round(next)));
-      return next;
-    });
-  }, []);
+  const handleResizeKeyboard = useCallback(
+    (direction: 'shrink' | 'grow') => {
+      setSidebarWidth((w) => {
+        const next =
+          direction === 'shrink'
+            ? Math.max(w - 20, EXPANDED_MIN)
+            : Math.min(w + 20, (window.innerWidth * 0.4) / uiScale);
+        localStorage.setItem('side:width', String(Math.round(next)));
+        return next;
+      });
+    },
+    [uiScale],
+  );
 
   useEffect(() => {
     return () => {
@@ -183,9 +190,9 @@ function UnifiedSidebar() {
         <aside
           className="relative flex h-full flex-shrink-0 overflow-hidden"
           style={{
-            width: expanded ? sidebarWidth : COLLAPSED_WIDTH,
-            minWidth: expanded ? EXPANDED_MIN : COLLAPSED_WIDTH,
-            maxWidth: expanded ? '40%' : COLLAPSED_WIDTH,
+            width: pxToRem(expanded ? sidebarWidth : COLLAPSED_WIDTH),
+            minWidth: pxToRem(expanded ? EXPANDED_MIN : COLLAPSED_WIDTH),
+            maxWidth: expanded ? '40%' : pxToRem(COLLAPSED_WIDTH),
             transition: isResizing
               ? 'none'
               : `width ${TRANSITION_MS}ms ${EASING}, min-width ${TRANSITION_MS}ms ${EASING}, max-width ${TRANSITION_MS}ms ${EASING}`,

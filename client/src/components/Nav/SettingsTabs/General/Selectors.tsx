@@ -33,7 +33,7 @@ export const ThemeSelector = ({
         value={theme}
         onChange={onChange}
         options={themeOptions}
-        sizeClasses={cn('z-50 w-[180px]', popoverClassName)}
+        sizeClasses={cn('z-50 w-[11.25rem]', popoverClassName)}
         testId="theme-selector"
         aria-labelledby={labelId}
         portal={portal}
@@ -121,7 +121,7 @@ export const LangSelector = ({
           value={langcode}
           onChange={onChange}
           sizeClasses={cn(
-            'z-50 [--anchor-max-height:256px] max-h-[60vh] w-[220px]',
+            'z-50 [--anchor-max-height:16rem] max-h-[60vh] w-[13.75rem]',
             popoverClassName,
           )}
           options={languageOptions}

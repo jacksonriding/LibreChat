@@ -33,7 +33,7 @@ const EngineSTTDropdown: React.FC<EngineSTTDropdownProps> = ({ external }) => {
         value={engineSTT}
         onChange={handleSelect}
         options={endpointOptions}
-        sizeClasses="w-[180px]"
+        sizeClasses="w-[11.25rem]"
         testId="EngineSTTDropdown"
         className="z-50"
         aria-labelledby={labelId}
