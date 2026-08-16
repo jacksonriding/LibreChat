@@ -1,5 +1,4 @@
 import { useCallback, useState, useEffect, useRef, memo, startTransition } from 'react';
-import { useAtomValue } from 'jotai';
 import { useForm } from 'react-hook-form';
 import { pxToRem } from '@librechat/client';
 import type { ReactNode } from 'react';
@@ -18,7 +17,7 @@ import { MobileHeader, MobileBottomBar, MobileShortcutTargets } from './mobile';
 import useUnifiedSidebarLinks from '~/hooks/Nav/useUnifiedSidebarLinks';
 import useSidebarState from '~/hooks/Nav/useSidebarState';
 import { useChatHelpers, useLocalize } from '~/hooks';
-import { uiScaleValueAtom } from '~/store/uiScale';
+import useRemScale from '~/hooks/useRemScale';
 import SidePanelNav from '~/components/SidePanel/Nav';
 import Sidebar from './Sidebar';
 import { cn } from '~/utils';
@@ -48,7 +47,7 @@ function UnifiedSidebar() {
   const localize = useLocalize();
   const { isSmallScreen, expanded, setExpanded } = useSidebarState();
   const [sidebarWidth, setSidebarWidth] = useState(getInitialWidth);
-  const uiScale = useAtomValue(uiScaleValueAtom);
+  const remScale = useRemScale();
   const [isResizing, setIsResizing] = useState(false);
   const resizeHandlers = useRef<{ move: (e: MouseEvent) => void; up: () => void } | null>(null);
 
@@ -69,7 +68,9 @@ function UnifiedSidebar() {
   const handleResizeStart = useCallback(() => {
     setIsResizing(true);
     document.body.style.userSelect = 'none';
-    const maxWidth = (window.innerWidth * 0.4) / uiScale;
+    const maxWidth = (window.innerWidth * 0.4) / remScale;
+    /** The scaled minimum can exceed the viewport cap, so it yields to the cap. */
+    const minWidth = Math.min(EXPANDED_MIN, maxWidth);
     let rafId: number | null = null;
 
     const move = (e: MouseEvent) => {
@@ -78,7 +79,7 @@ function UnifiedSidebar() {
       }
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const next = Math.max(EXPANDED_MIN, Math.min(e.clientX / uiScale, maxWidth));
+        const next = Math.max(minWidth, Math.min(e.clientX / remScale, maxWidth));
         setSidebarWidth(next);
       });
     };
@@ -102,20 +103,21 @@ function UnifiedSidebar() {
     resizeHandlers.current = { move, up };
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', up);
-  }, [uiScale]);
+  }, [remScale]);
 
   const handleResizeKeyboard = useCallback(
     (direction: 'shrink' | 'grow') => {
       setSidebarWidth((w) => {
+        const maxWidth = (window.innerWidth * 0.4) / remScale;
         const next =
           direction === 'shrink'
-            ? Math.max(w - 20, EXPANDED_MIN)
-            : Math.min(w + 20, (window.innerWidth * 0.4) / uiScale);
+            ? Math.max(w - 20, Math.min(EXPANDED_MIN, maxWidth))
+            : Math.min(w + 20, maxWidth);
         localStorage.setItem('side:width', String(Math.round(next)));
         return next;
       });
     },
-    [uiScale],
+    [remScale],
   );
 
   useEffect(() => {
@@ -191,7 +193,7 @@ function UnifiedSidebar() {
           className="relative flex h-full flex-shrink-0 overflow-hidden"
           style={{
             width: pxToRem(expanded ? sidebarWidth : COLLAPSED_WIDTH),
-            minWidth: pxToRem(expanded ? EXPANDED_MIN : COLLAPSED_WIDTH),
+            minWidth: expanded ? `min(${pxToRem(EXPANDED_MIN)}, 40%)` : pxToRem(COLLAPSED_WIDTH),
             maxWidth: expanded ? '40%' : pxToRem(COLLAPSED_WIDTH),
             transition: isResizing
               ? 'none'
