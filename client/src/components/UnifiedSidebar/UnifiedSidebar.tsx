@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useRef, memo, startTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { pxToRem } from '@librechat/client';
+import { pxToRem, useRemScale } from '@librechat/client';
 import type { ReactNode } from 'react';
 import type { ChatFormValues } from '~/common';
 import {
@@ -17,7 +17,6 @@ import { MobileHeader, MobileBottomBar, MobileShortcutTargets } from './mobile';
 import useUnifiedSidebarLinks from '~/hooks/Nav/useUnifiedSidebarLinks';
 import useSidebarState from '~/hooks/Nav/useSidebarState';
 import { useChatHelpers, useLocalize } from '~/hooks';
-import useRemScale from '~/hooks/useRemScale';
 import SidePanelNav from '~/components/SidePanel/Nav';
 import Sidebar from './Sidebar';
 import { cn } from '~/utils';
