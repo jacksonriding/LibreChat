@@ -18,6 +18,8 @@ const {
   buildWebSearchContext,
   buildImageToolContext,
   buildToolClassification,
+  applyEndpointProgrammaticCapabilities,
+  resolveAgentProgrammaticToolServers,
   supportsProgrammaticCodeExecution,
   getMissingCustomUserVars,
   buildWebSearchDynamicContext,
@@ -322,7 +324,7 @@ async function resolveAgentCapabilities(req, appConfig, agentId) {
       appConfig.endpoints?.[EModelEndpoint.agents]?.capabilities ?? defaultAgentCapabilities,
     );
   }
-  return capabilities;
+  return applyEndpointProgrammaticCapabilities(appConfig, agentId, capabilities);
 }
 
 /**
@@ -1310,6 +1312,7 @@ async function loadToolDefinitionsWrapper({
       toolOptions: agent.tool_options,
       deferredToolsEnabled,
       programmaticToolsEnabled,
+      programmaticToolServers: resolveAgentProgrammaticToolServers(appConfig, agent.id),
       codeExecutionEnabled,
       codeExecutionContext: resolvedCodeExecutionContext,
       codeEnvironments: appConfig?.endpoints?.agents?.statefulCodeSessions?.environments,
@@ -1404,6 +1407,7 @@ async function loadToolDefinitionsWrapper({
           toolOptions: agent.tool_options,
           deferredToolsEnabled,
           programmaticToolsEnabled,
+          programmaticToolServers: resolveAgentProgrammaticToolServers(appConfig, agent.id),
           codeExecutionEnabled,
           codeExecutionContext: resolvedCodeExecutionContext,
           codeEnvironments: appConfig?.endpoints?.agents?.statefulCodeSessions?.environments,
@@ -1778,6 +1782,7 @@ async function loadAgentTools({
       agentToolOptions: agent.tool_options,
       deferredToolsEnabled,
       programmaticToolsEnabled,
+      programmaticToolServers: resolveAgentProgrammaticToolServers(appConfig, agent.id),
       codeExecutionEnabled,
       codeEnvironments: appConfig?.endpoints?.agents?.statefulCodeSessions?.environments,
       getAppConfig,
